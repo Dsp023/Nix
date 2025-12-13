@@ -348,7 +348,7 @@ const ExplainEngine = () => {
                         <div
                             ref={outputRef}
                             id="output-display"
-                            className="markdown-content text-gray-300 leading-7 text-sm space-y-4 border border-zinc-800 rounded-xl p-6 bg-zinc-900/30 overflow-hidden"
+                            className="markdown-content text-gray-300 leading-7 text-sm space-y-4 border border-zinc-800 rounded-xl p-4 sm:p-6 bg-zinc-900/30 overflow-hidden"
                         >
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath]}
@@ -376,7 +376,7 @@ const ExplainEngine = () => {
                                                     <span className="text-xs font-mono text-zinc-500 uppercase">{language}</span>
                                                     <CopyButton text={content} />
                                                 </div>
-                                                <div className="text-sm">
+                                                <div className="text-sm overflow-x-auto">
                                                     <SyntaxHighlighter
                                                         style={atomDark}
                                                         language={language}

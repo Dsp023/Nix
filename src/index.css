@@ -23,7 +23,8 @@
 }
 
 .markdown-content p {
-    @apply mb-4 leading-7 text-muted-foreground;
+    @apply mb-4 leading-7 text-muted-foreground break-words;
+    overflow-wrap: break-word;
 }
 
 .markdown-content ul {
