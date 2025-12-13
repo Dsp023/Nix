@@ -121,3 +121,92 @@
 ::-webkit-scrollbar-corner {
     background: #18181b;
 }
+
+@media print {
+
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Show only the output display and its children */
+    #output-display,
+    #output-display * {
+        visibility: visible;
+    }
+
+    /* Position the output display to fill the page */
+    #output-display {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background-color: white !important;
+        /* Allow natural text colors, but default to black if undefined */
+        color: black;
+        overflow: visible !important;
+    }
+
+    /* Force Light Mode Styles for Print, but allow colors */
+    .markdown-content {
+        color: black;
+    }
+
+    .markdown-content p,
+    .markdown-content li {
+        color: black;
+        text-shadow: none !important;
+    }
+
+    /* Headings can have color if desired, or keep black */
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4 {
+        color: black;
+        /* Or change to a dark color if preferred */
+        text-shadow: none !important;
+    }
+
+    /* Code Blocks - RESTORE COLORS */
+    .markdown-content pre {
+        background-color: #f4f4f5 !important;
+        /* zinc-100 */
+        border: 1px solid #e4e4e7 !important;
+        /* Do NOT force black here, let syntax highlighting work */
+        white-space: pre-wrap !important;
+    }
+
+    .markdown-content pre code {
+        /* Allow syntax highlighting colors to pass through */
+        color: inherit;
+        text-shadow: none !important;
+    }
+
+    .markdown-content code {
+        color: #ef4444 !important;
+        /* Inline code red */
+        background-color: #f4f4f5 !important;
+        border: none !important;
+    }
+
+    /* Keep Tables Clean */
+    .markdown-content table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+
+    .markdown-content th,
+    .markdown-content td {
+        border: 1px solid #000 !important;
+        background-color: white !important;
+    }
+
+    .markdown-content th {
+        background-color: #f4f4f5 !important;
+        font-weight: bold !important;
+    }
+}
