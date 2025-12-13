@@ -1,5 +1,5 @@
 {
-  "name": "explain",
+  "name": "nix",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,9 +11,16 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "html2canvas": "^1.4.1",
     "jspdf": "^3.0.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.0",
+    "rehype-katex": "^7.0.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
