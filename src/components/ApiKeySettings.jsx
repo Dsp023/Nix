@@ -28,7 +28,7 @@ const ApiKeySettings = ({ isOpen, onClose, onSave }) => {
         setUserApiKey(apiKey);
         setProvider(selectedProvider);
         setSaved(true);
-        setTimeout(() => {
+        setTimeout( () => {
             setSaved(false);
             if (onSave) onSave();
         }, 1000);
@@ -67,7 +67,7 @@ const ApiKeySettings = ({ isOpen, onClose, onSave }) => {
                         </h2>
                         <button
                             onClick={onClose}
-                            className="p-1 text-zinc-400 hover:text-white transition-colors"
+                            className="p-1 text-zinc-400  hover:text-white transition-colors"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 6 6 18" />
@@ -80,7 +80,7 @@ const ApiKeySettings = ({ isOpen, onClose, onSave }) => {
                     <div className="p-5 space-y-5">
                         {/* Status Box */}
                         {usingBuiltIn ? (
-                            <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-700/50">
+                            <div className=" p-4 rounded-xl bg-emerald-900/20 border border-emerald-700/50">
                                 <p className="text-sm text-emerald-200">
                                     ✓ Using <strong>built-in Groq API</strong>. Add your own key below to use other providers or your own quota.
                                 </p>
@@ -157,7 +157,7 @@ const ApiKeySettings = ({ isOpen, onClose, onSave }) => {
                             disabled={!apiKey}
                             className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
-                            Clear Key
+                          Clear Key
                         </button>
                         <button
                             onClick={handleSave}
