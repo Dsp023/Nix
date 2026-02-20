@@ -9,7 +9,7 @@ const STORAGE_KEYS = {
 };
 
 // Built-in default API key (from .env for local dev, works on deployed version)
-const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || 'gsk_YOUR_GROQ_API_KEY_HERE';
 
 // Provider configurations
 const PROVIDERS = {

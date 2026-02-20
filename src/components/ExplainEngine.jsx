@@ -11,6 +11,32 @@ import ApiKeySettings from './ApiKeySettings';
 import { callAI, hasApiKey, isUsingDefaultKey } from '../utils/apiService';
 import FlashcardViewer from './FlashcardViewer';
 import LearningPathViewer from './LearningPathViewer';
+import CommandPalette from './CommandPalette';
+
+const levelThemes = {
+    0: { gradient: 'from-pink-500/20 via-rose-500/10 to-orange-500/20', border: 'border-pink-500/30', glow: 'shadow-pink-500/20', text: 'text-pink-400' },
+    1: { gradient: 'from-sky-500/20 via-blue-500/10 to-cyan-500/20', border: 'border-sky-500/30', glow: 'shadow-sky-500/20', text: 'text-sky-400' },
+    2: { gradient: 'from-zinc-500/20 via-zinc-600/10 to-zinc-400/20', border: 'border-zinc-500/30', glow: 'shadow-zinc-500/20', text: 'text-zinc-400' },
+    3: { gradient: 'from-indigo-500/20 via-violet-500/10 to-purple-500/20', border: 'border-indigo-500/30', glow: 'shadow-indigo-500/20', text: 'text-indigo-400' },
+    4: { gradient: 'from-emerald-500/20 via-teal-500/10 to-cyan-500/20', border: 'border-emerald-500/30', glow: 'shadow-emerald-500/20', text: 'text-emerald-400' },
+};
+
+const SkeletonLoader = () => (
+    <div className="space-y-6 animate-pulse p-4 sm:p-6 bg-zinc-900/30 border border-zinc-800 rounded-xl">
+        <div className="h-6 bg-zinc-800 rounded-md w-3/4"></div>
+        <div className="space-y-3">
+            <div className="h-4 bg-zinc-800/80 rounded w-full"></div>
+            <div className="h-4 bg-zinc-800/80 rounded w-[95%]"></div>
+            <div className="h-4 bg-zinc-800/80 rounded w-[90%]"></div>
+            <div className="h-4 bg-zinc-800/80 rounded w-4/5"></div>
+        </div>
+        <div className="space-y-3 pt-4">
+            <div className="h-5 bg-zinc-800 rounded-md w-1/3"></div>
+            <div className="h-4 bg-zinc-800/80 rounded w-[98%]"></div>
+            <div className="h-4 bg-zinc-800/80 rounded w-[92%]"></div>
+        </div>
+    </div>
+);
 
 const CopyButton = ({ text }) => {
     const [copied, setCopied] = useState(false);
@@ -56,6 +82,10 @@ const ExplainEngine = () => {
     const [learningPath, setLearningPath] = useState([]);
     const [isGeneratingPath, setIsGeneratingPath] = useState(false);
 
+    // UI States
+    const [isFocusMode, setIsFocusMode] = useState(false);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
     const textareaRef = useRef(null);
     const outputRef = useRef(null);
 
@@ -71,6 +101,18 @@ const ExplainEngine = () => {
     useEffect(() => {
         localStorage.setItem('nix_history', JSON.stringify(history));
     }, [history]);
+
+    // Command Palette Keyboard Shortcut
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsCommandPaletteOpen(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const addToHistory = (query, response, lvl) => {
         const newEntry = {
@@ -323,8 +365,36 @@ const ExplainEngine = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const commandPaletteCommands = [
+        { label: 'Set Level: Child', description: 'Simple words, fun analogies (Level 0)', action: () => setLevel(0) },
+        { label: 'Set Level: Simple', description: 'Clear and simple explanation (Level 1)', action: () => setLevel(1) },
+        { label: 'Set Level: Detailed', description: 'Comprehensive breakdown (Level 2)', action: () => setLevel(2) },
+        { label: 'Set Level: Academic', description: 'Rigorous explanation (Level 3)', action: () => setLevel(3) },
+        { label: 'Set Level: Expert', description: 'Highly technical analysis (Level 4)', action: () => setLevel(4) },
+        { label: 'Toggle History', description: 'Show or hide past explanations', action: () => setShowHistory(prev => !prev) },
+        { label: 'Clear Input', description: 'Erase current text and output', action: () => handleClear() },
+        { label: 'API Settings', description: 'Manage your API keys', action: () => setShowSettings(true) },
+        ...(output ? [
+            { label: 'Generate Flashcards', description: 'Create study cards from current explanation', action: handleGenerateFlashcards },
+            { label: 'Toggle Focus Mode', description: 'Hide UI for distraction-free reading', action: () => setIsFocusMode(prev => !prev) }
+        ] : []),
+        ...(textareaRef.current?.value || output ? [
+            { label: 'Generate Learning Path', description: 'Create a 5-step roadmap for this topic', action: handleGenerateLearningPath }
+        ] : [])
+    ];
+
+    const theme = levelThemes[level] || levelThemes[2];
+
     return (
-        <div className="w-full max-w-4xl mx-auto space-y-8 sm:space-y-12 relative px-4 sm:px-0 pb-20">
+        <div className={`w-full max-w-4xl mx-auto space-y-8 sm:space-y-12 relative px-4 sm:px-0 pb-20 transition-all duration-500`}>
+            {/* Dynamic Background Glow */}
+            <div className={`fixed inset-0 pointer-events-none transition-colors duration-1000 bg-gradient-to-b ${theme.gradient} opacity-40 blur-3xl -z-10`} />
+
+            <CommandPalette
+                isOpen={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+                commands={commandPaletteCommands}
+            />
             {flashcards.length > 0 && (
                 <FlashcardViewer
                     cards={flashcards}
@@ -360,7 +430,7 @@ const ExplainEngine = () => {
             <ApiKeySettings isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
             {/* History Sidebar */}
-            <div className={`fixed inset-y-0 left-0 w-[85vw] sm:w-80 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-300 z-40 p-6 overflow-y-auto ${showHistory ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 w-[85vw] sm:w-80 bg-zinc-950/90 backdrop-blur-xl border-r border-zinc-800/80 transform transition-transform duration-300 z-40 p-6 overflow-y-auto ${showHistory ? 'translate-x-0 shadow-2xl shadow-black' : '-translate-x-full'}`}>
                 <div className="flex justify-between items-center mb-8 pt-12">
                     <h2 className="text-xl font-bold text-white">History</h2>
                 </div>
@@ -399,26 +469,24 @@ const ExplainEngine = () => {
             {/* Overlay for mobile/desktop to close sidebar */}
             {showHistory && (
                 <div
-                    className="fixed inset-0 bg-black/60 z-30 backdrop-blur-sm"
+                    className="fixed inset-0 bg-black/40 z-30 backdrop-blur-sm transition-opacity"
                     onClick={() => setShowHistory(false)}
                 />
             )}
 
-            <header className="text-center space-y-2 pt-8">
-                {/* ... existing header ... */}
-                <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Nix</h1>
-                <p className="text-lg text-muted-foreground">Adaptive explanation engine for complex topics.</p>
-                {/* Built-in key indicator */}
-                {isUsingDefaultKey() && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-900/30 border border-emerald-700/50 rounded-full text-xs">
-                        <span className="text-emerald-400">✓ Using built-in Groq API</span>
-                    </div>
-                )}
-            </header>
+            {!isFocusMode && (
+                <header className="text-center space-y-2 pt-8 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Nix</h1>
+                    <p className="text-lg text-muted-foreground">Adaptive explanation engine for complex topics.</p>
+                    {isUsingDefaultKey() && (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-900/30 border border-emerald-700/50 rounded-full text-xs">
+                            <span className="text-emerald-400">✓ Using built-in Groq API</span>
+                        </div>
+                    )}
+                </header>
+            )}
 
-            {/* ... rest of the component ... */}
-
-            <main className="space-y-8">
+            <main className={`space-y-8 transition-all duration-500 ${isFocusMode ? 'pt-12' : ''}`}>
                 {/* API Key Required Prompt */}
                 {!hasApiKey() && (
                     <div className="p-5 bg-blue-900/20 border border-blue-700/50 rounded-xl">
@@ -448,82 +516,109 @@ const ExplainEngine = () => {
                     </div>
                 )}
 
-                <div className="space-y-4">
-                    <textarea
-                        ref={textareaRef}
-                        id="text-input"
-                        className="w-full bg-input text-foreground border border-zinc-700/80 rounded-xl p-4 text-base focus:ring-1 focus:ring-white focus:border-white outline-none transition-all placeholder:text-muted-foreground/50 h-32 resize-y shadow-sm"
-                        placeholder="Paste your complex text here..."
-                        disabled={isLoading}
-                    ></textarea>
-                </div>
-
-                <div className="space-y-4">
-                    <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider block">
-                        Complexity Level: <span className="text-foreground ml-2">{levels[level].label}</span>
-                    </label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1 bg-zinc-900/50 rounded-lg border border-zinc-800">
-                        {levels.map((lvl) => (
-                            <button
-                                key={lvl.value}
-                                onClick={() => setLevel(lvl.value)}
+                {!isFocusMode && (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 delay-150 fill-mode-both">
+                        <div className="space-y-4">
+                            <textarea
+                                ref={textareaRef}
+                                id="text-input"
+                                className={`w-full bg-zinc-950/50 backdrop-blur-sm text-foreground border border-zinc-800 rounded-xl p-5 text-base focus:ring-1 outline-none transition-all placeholder:text-muted-foreground/50 h-36 resize-y shadow-inner focus:border-zinc-500`}
+                                placeholder="What do you want to learn today?"
                                 disabled={isLoading}
-                                className={`
-                                    py-2 px-1 rounded-md text-xs sm:text-sm font-medium transition-all duration-200
-                                    ${level === lvl.value
-                                        ? 'bg-zinc-700 text-white shadow-sm ring-1 ring-zinc-600'
-                                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}
-                                    disabled:opacity-50 disabled:cursor-not-allowed
-                                `}
-                            >
-                                {lvl.label}
-                            </button>
-                        ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground/70 min-h-[1.25rem]">
-                        {levels[level].description}
-                    </p>
-                </div>
+                            ></textarea>
+                        </div>
 
-                <div className="flex justify-between items-center flex-wrap gap-4">
-                    <button
-                        onClick={handleGenerateLearningPath}
-                        disabled={isLoading || isGeneratingPath || (!textareaRef.current?.value && !output)}
-                        className={`py-2 px-6 rounded-full text-sm font-semibold transition-all duration-200 border border-indigo-700/50 hover:bg-indigo-900/30 text-indigo-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                        {isGeneratingPath ? 'Generating...' : '🗺️ Learning Path'}
-                    </button>
-                    <button
-                        id="explain-button"
-                        onClick={handleExplain}
-                        disabled={isLoading}
-                        className={`py-2 px-6 rounded-full text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-white shadow-lg active:scale-[0.98]
-                            ${isLoading
-                                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                                : 'bg-white text-black hover:bg-zinc-200 hover:shadow-xl'}`}
-                    >
-                        {isLoading ? 'Thinking...' : 'Explain'}
-                    </button>
-                </div>
+                        <div className="space-y-3 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80 backdrop-blur-md">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block flex items-center justify-between">
+                                <span>Complexity Level</span>
+                                <span className={`font-bold transition-colors duration-300 ${theme.text}`}>{levels[level].label}</span>
+                            </label>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                {levels.map((lvl) => (
+                                    <button
+                                        key={lvl.value}
+                                        onClick={() => setLevel(lvl.value)}
+                                        disabled={isLoading}
+                                        className={[
+                                            'py-2.5 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300',
+                                            level === lvl.value
+                                                ? 'bg-zinc-800 text-white shadow-sm ring-1 ring-zinc-700'
+                                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 bg-zinc-900/50',
+                                            'disabled:opacity-50 disabled:cursor-not-allowed'
+                                        ].join(' ')}
+                                    >
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span>{lvl.label}</span>
+                                            {level === lvl.value && <div className={`w-4 h-0.5 rounded-full ${theme.border} border-t-2 opacity-80 shadow-[0_0_8px_currentColor]`} />}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground/70 min-h-[1.25rem] text-center italic pt-1">
+                                {levels[level].description}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {!isFocusMode && (
+                    <div className="flex justify-between items-center flex-wrap gap-4 pt-2">
+                        <button
+                            onClick={handleGenerateLearningPath}
+                            disabled={isLoading || isGeneratingPath || (!textareaRef.current?.value && !output)}
+                            className={`py-2.5 px-6 rounded-full text-sm font-semibold transition-all duration-200 border border-zinc-700/50 hover:bg-zinc-800/50 text-zinc-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:text-white backdrop-blur-sm`}
+                        >
+                            {isGeneratingPath ? 'Generating...' : '🗺️ Learning Path'}
+                        </button>
+                        <button
+                            id="explain-button"
+                            onClick={handleExplain}
+                            disabled={isLoading}
+                            className={`py-2.5 px-8 rounded-full text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-white shadow-lg active:scale-[0.98]
+                                ${isLoading
+                                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                                    : 'bg-white text-black hover:bg-zinc-200 hover:shadow-xl hover:shadow-white/10'}`}
+                        >
+                            {isLoading ? 'Thinking...' : 'Explain'}
+                        </button>
+                    </div>
+                )}
 
                 {(output || isLoading) && (
-                    <div className="mt-8 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-foreground">Explanation</h3>
-                            <div className="flex gap-2">
+                    <div className="mt-8 pt-4 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-xl font-bold text-white tracking-tight">Explanation</h3>
+                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border bg-zinc-900/50 ${theme.border} ${theme.text} uppercase tracking-wider shadow-inner`}>
+                                    {levels[level].label}
+                                </span>
+                            </div>
+                            <div className="flex gap-2 bg-zinc-900/60 p-1 rounded-lg border border-zinc-800/80 backdrop-blur-md">
+                                <button
+                                    onClick={() => setIsFocusMode(!isFocusMode)}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors border rounded-md flex items-center gap-1.5 
+                                        ${isFocusMode ? `${theme.text} bg-zinc-800 shadow-inner border-zinc-700` : 'text-zinc-400 hover:text-white border-transparent hover:bg-zinc-800/50'}`}
+                                    title="Toggle Focus Mode"
+                                >
+                                    {isFocusMode ? (
+                                        <><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg> Focus</>
+                                    ) : (
+                                        <><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3m13 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-8v3a2 2 0 0 1-2 2h-3" /></svg> Focus</>
+                                    )}
+                                </button>
                                 <button
                                     onClick={handleCopyAll}
                                     disabled={isLoading || !output}
-                                    className={`px-3 py-1.5 text-xs font-medium transition-colors border rounded-md flex items-center gap-1.5 ${copied ? 'text-green-400 border-green-700 bg-green-900/20' : 'text-muted-foreground hover:text-foreground border-transparent hover:border-border'}`}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-all duration-300 border rounded-md flex items-center gap-1.5 ${copied ? 'text-green-400 border-green-700 bg-green-900/20' : 'text-zinc-400 hover:text-white border-transparent hover:bg-zinc-800/50'}`}
                                     title="Ctrl+Shift+C"
                                 >
-                                    {copied ? '✓ Copied!' : '📋 Copy All'}
+                                    {copied ? '✓ Copied' : '📋 Copy'}
                                 </button>
                                 <button
-                                    onClick={handleClear}
+                                    onClick={() => { handleClear(); setIsFocusMode(false); }}
                                     disabled={isLoading}
-                                    className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors border border-transparent hover:border-border rounded-md"
+                                    className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-rose-400 transition-colors border border-transparent hover:bg-zinc-800/50 rounded-md"
                                     title="Escape"
                                 >
                                     Clear
@@ -532,68 +627,72 @@ const ExplainEngine = () => {
                         </div>
 
                         {/* Output Container with Border and Overflow Handling */}
-                        <div
-                            ref={outputRef}
-                            id="output-display"
-                            className="markdown-content text-gray-300 leading-7 text-sm space-y-4 border border-zinc-800 rounded-xl p-4 sm:p-6 bg-zinc-900/30 overflow-hidden"
-                        >
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkMath]}
-                                rehypePlugins={[rehypeKatex, rehypeRaw]}
-                                components={{
-                                    code({ node, inline, className, children, ...props }) {
-                                        const match = /language-(\w+)/.exec(className || '')
-                                        const content = String(children).replace(/\n$/, '')
-                                        const isShort = content.length < 60 && !content.includes('\n')
-                                        const language = match ? match[1] : 'text'
+                        {isLoading ? (
+                            <SkeletonLoader />
+                        ) : (
+                            <div
+                                ref={outputRef}
+                                id="output-display"
+                                className={`markdown-content text-zinc-300 leading-relaxed text-[15px] space-y-4 border border-zinc-800/80 rounded-2xl p-5 sm:p-8 bg-zinc-950/60 backdrop-blur-md overflow-hidden shadow-2xl ${theme.border} transition-colors duration-500`}
+                            >
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                    rehypePlugins={[rehypeKatex, rehypeRaw]}
+                                    components={{
+                                        code({ node, inline, className, children, ...props }) {
+                                            const match = /language-(\w+)/.exec(className || '')
+                                            const content = String(children).replace(/\n$/, '')
+                                            const isShort = content.length < 60 && !content.includes('\n')
+                                            const language = match ? match[1] : 'text'
 
-                                        // Inline or short content
-                                        if (inline || isShort) {
+                                            // Inline or short content
+                                            if (inline || isShort) {
+                                                return (
+                                                    <code className="bg-zinc-800/50 rounded px-1.5 py-0.5 text-sm font-mono text-zinc-300 break-words font-bold" {...props}>
+                                                        {children}
+                                                    </code>
+                                                )
+                                            }
+
+                                            // Block content with syntax highlighting and copy button
                                             return (
-                                                <code className="bg-zinc-800/50 rounded px-1.5 py-0.5 text-sm font-mono text-zinc-300 break-words font-bold" {...props}>
-                                                    {children}
-                                                </code>
+                                                <div className="relative group my-6 border border-zinc-800 rounded-lg overflow-hidden">
+                                                    <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-zinc-800">
+                                                        <span className="text-xs font-mono text-zinc-500 uppercase">{language}</span>
+                                                        <CopyButton text={content} />
+                                                    </div>
+                                                    <div className="text-sm overflow-x-auto">
+                                                        <SyntaxHighlighter
+                                                            style={atomDark}
+                                                            language={language}
+                                                            PreTag="div"
+                                                            customStyle={{ margin: 0, padding: '1.5rem', background: 'rgba(24, 24, 27, 0.5)' }}
+                                                            {...props}
+                                                        >
+                                                            {content}
+                                                        </SyntaxHighlighter>
+                                                    </div>
+                                                </div>
+                                            )
+                                        },
+                                        table({ node, ...props }) {
+                                            return (
+                                                <div className="overflow-x-auto my-6 border border-zinc-800 rounded-lg">
+                                                    <table className="w-full text-sm text-left border-collapse" {...props} />
+                                                </div>
                                             )
                                         }
-
-                                        // Block content with syntax highlighting and copy button
-                                        return (
-                                            <div className="relative group my-6 border border-zinc-800 rounded-lg overflow-hidden">
-                                                <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-zinc-800">
-                                                    <span className="text-xs font-mono text-zinc-500 uppercase">{language}</span>
-                                                    <CopyButton text={content} />
-                                                </div>
-                                                <div className="text-sm overflow-x-auto">
-                                                    <SyntaxHighlighter
-                                                        style={atomDark}
-                                                        language={language}
-                                                        PreTag="div"
-                                                        customStyle={{ margin: 0, padding: '1.5rem', background: 'rgba(24, 24, 27, 0.5)' }}
-                                                        {...props}
-                                                    >
-                                                        {content}
-                                                    </SyntaxHighlighter>
-                                                </div>
-                                            </div>
-                                        )
-                                    },
-                                    table({ node, ...props }) {
-                                        return (
-                                            <div className="overflow-x-auto my-6 border border-zinc-800 rounded-lg">
-                                                <table className="w-full text-sm text-left border-collapse" {...props} />
-                                            </div>
-                                        )
+                                    }}
+                                >
+                                    {output
+                                        .replace(/\\\[/g, '$$$')
+                                        .replace(/\\\]/g, '$$$')
+                                        .replace(/\\\(/g, '$')
+                                        .replace(/\\\)/g, '$')
                                     }
-                                }}
-                            >
-                                {output
-                                    .replace(/\\\[/g, '$$$')
-                                    .replace(/\\\]/g, '$$$')
-                                    .replace(/\\\(/g, '$')
-                                    .replace(/\\\)/g, '$')
-                                }
-                            </ReactMarkdown>
-                        </div>
+                                </ReactMarkdown>
+                            </div>
+                        )}
 
                         {/* Interactive Tools */}
                         {!isLoading && output && (
