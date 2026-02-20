@@ -9,6 +9,8 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import 'katex/dist/katex.min.css';
 import ApiKeySettings from './ApiKeySettings';
 import { callAI, hasApiKey, isUsingDefaultKey } from '../utils/apiService';
+import FlashcardViewer from './FlashcardViewer';
+import LearningPathViewer from './LearningPathViewer';
 
 const CopyButton = ({ text }) => {
     const [copied, setCopied] = useState(false);
@@ -47,6 +49,13 @@ const ExplainEngine = () => {
     const [showHistory, setShowHistory] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Feature States
+    const [flashcards, setFlashcards] = useState([]);
+    const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+    const [learningPath, setLearningPath] = useState([]);
+    const [isGeneratingPath, setIsGeneratingPath] = useState(false);
+
     const textareaRef = useRef(null);
     const outputRef = useRef(null);
 
@@ -132,6 +141,8 @@ const ExplainEngine = () => {
         setIsLoading(true);
         setError('');
         setFollowUpQuestions([]);
+        setFlashcards([]);
+        // We do NOT clear the learning path, so they can keep following the roadmap
 
         const systemPrompt = `You are a helpful AI assistant that explains complex topics in simple terms. ${levels[level].prompt} 
                             
@@ -198,6 +209,75 @@ const ExplainEngine = () => {
         setOutput('');
         setError('');
         setFollowUpQuestions([]);
+        setFlashcards([]);
+        setLearningPath([]);
+    };
+
+    const handleGenerateFlashcards = async () => {
+        if (!output) return;
+        setIsGeneratingFlashcards(true);
+        setError('');
+
+        const systemPrompt = `You are an expert AI tutor. Extract the 5 most important core concepts from the user's text and convert them into flashcards. 
+        
+        **FORMAT RULES:**
+        Return strictly a valid JSON array matching this format:
+        [{"q": "Question here?", "a": "Answer here"}]
+        
+        Do NOT wrap the JSON in markdown code blocks (\`\`\`json). Do NOT add ANY conversational text. Return ONLY the JSON array.`;
+
+        try {
+            const result = await callAI([{ role: 'user', content: output }], systemPrompt);
+            try {
+                const cleanedResult = result.replace(/```json/i, '').replace(/```/g, '').trim();
+                const cards = JSON.parse(cleanedResult);
+                setFlashcards(cards);
+            } catch (e) {
+                console.error('Failed to parse flashcards JSON', e);
+                setError('Failed to generate flashcards. AI returned invalid format.');
+            }
+        } catch (err) {
+            setError(`Error: ${err.message}`);
+        } finally {
+            setIsGeneratingFlashcards(false);
+        }
+    };
+
+    const handleGenerateLearningPath = async () => {
+        const textToExplain = textareaRef.current?.value.trim() || output;
+        if (!textToExplain) {
+            setError('Please enter a topic first.');
+            return;
+        }
+
+        setIsGeneratingPath(true);
+        setError('');
+
+        const systemPrompt = `You are an expert AI tutor creating learning roadmaps. 
+        Create a 5-step logical learning path based on the user's topic. Determine what prerequisites they need or what logical sequence of concepts follows.
+        Adapt the text complexity to this level: "${levels[level].label}".
+        
+        **FORMAT RULES:**
+        Return strictly a valid JSON array matching this format:
+        [{"title": "Topic Name", "description": "Short explanation of what is learned here"}]
+        
+        Do NOT wrap the JSON in markdown code blocks (\`\`\`json). Do NOT add ANY conversational text. Return ONLY the JSON array.`;
+
+        try {
+            const result = await callAI([{ role: 'user', content: textToExplain }], systemPrompt);
+            try {
+                const cleanedResult = result.replace(/```json/i, '').replace(/```/g, '').trim();
+                const path = JSON.parse(cleanedResult);
+                setLearningPath(path);
+            } catch (e) {
+                console.error('Failed to parse learning path JSON', e);
+                setError('Failed to generate learning path. AI returned invalid format.');
+            }
+        } catch (err) {
+            setError(`Error: ${err.message}`);
+        } finally {
+            setIsGeneratingPath(false);
+        }
     };
 
     // One-Click Copy entire explanation
@@ -234,8 +314,24 @@ const ExplainEngine = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [output]);
 
+    const handleSelectPathStep = (stepTitle) => {
+        if (textareaRef.current) {
+            textareaRef.current.value = stepTitle;
+        }
+        handleExplain();
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
-        <div className="w-full max-w-4xl mx-auto space-y-8 sm:space-y-12 relative px-4 sm:px-0">
+        <div className="w-full max-w-4xl mx-auto space-y-8 sm:space-y-12 relative px-4 sm:px-0 pb-20">
+            {flashcards.length > 0 && (
+                <FlashcardViewer
+                    cards={flashcards}
+                    onClose={() => setFlashcards([])}
+                />
+            )}
+
             {/* History Sidebar Toggle */}
             <button
                 onClick={() => setShowHistory(!showHistory)}
@@ -390,7 +486,14 @@ const ExplainEngine = () => {
                     </p>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                    <button
+                        onClick={handleGenerateLearningPath}
+                        disabled={isLoading || isGeneratingPath || (!textareaRef.current?.value && !output)}
+                        className={`py-2 px-6 rounded-full text-sm font-semibold transition-all duration-200 border border-indigo-700/50 hover:bg-indigo-900/30 text-indigo-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                        {isGeneratingPath ? 'Generating...' : '🗺️ Learning Path'}
+                    </button>
                     <button
                         id="explain-button"
                         onClick={handleExplain}
@@ -492,6 +595,19 @@ const ExplainEngine = () => {
                             </ReactMarkdown>
                         </div>
 
+                        {/* Interactive Tools */}
+                        {!isLoading && output && (
+                            <div className="mt-6 flex flex-wrap gap-3">
+                                <button
+                                    onClick={handleGenerateFlashcards}
+                                    disabled={isGeneratingFlashcards}
+                                    className="px-4 py-2 text-sm font-semibold text-emerald-400 bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-900/50 rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isGeneratingFlashcards ? '⏳ Generating cards...' : '🧠 Make Flashcards'}
+                                </button>
+                            </div>
+                        )}
+
                         {/* Follow-up Questions */}
                         {followUpQuestions.length > 0 && !isLoading && (
                             <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
@@ -508,6 +624,15 @@ const ExplainEngine = () => {
                                     ))}
                                 </div>
                             </div>
+                        )}
+
+                        {/* Learning Path Output */}
+                        {learningPath.length > 0 && !isLoading && (
+                            <LearningPathViewer
+                                path={learningPath}
+                                onSelectStep={handleSelectPathStep}
+                                currentTopic={textareaRef.current?.value || "Topic"}
+                            />
                         )}
                     </div>
                 )}
