@@ -33,6 +33,8 @@
 | :--- | :--- |
 | **🧠 Adaptive AI** | Powered by the **Groq API** (Llama 3 / Mixtral) for instant, high-quality insights. |
 | **🎚️ 5 Complexity Levels** | From **"Child"** (simple analogies) to **"Expert"** (rigorous math & theory). |
+| **🗺️ Learning Paths** | Instantly generate logical, 5-step roadmaps to master any complex topic. |
+| **🃏 1-Click Flashcards** | Automatically extract core concepts into interactive 3D-flippable study cards. |
 | **🕒 Smart History** | Automatically saves your sessions locally. Access past explanations via the sidebar. |
 | **📄 Pro PDF Export** | Generate professional, branded PDFs of your notes with **LaTeX math** and formatting preserved. |
 | **🎨 Obsidian UI** | A beautiful, distraction-free **dark mode** interface using Tailwind CSS and Vercel-inspired design. |
