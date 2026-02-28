@@ -11,7 +11,7 @@ const CommandPalette = ({ isOpen, onClose, commands }) => {
         cmd.description?.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Reset selection when search changes
+   
     useEffect(() => {
         setSelectedIndex(0);
     }, [search]);
