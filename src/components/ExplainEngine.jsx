@@ -54,10 +54,8 @@ const CopyButton = ({ text }) => {
     return (
         <button
             onClick={handleCopy}
-            className={`
-                text-[10px] font-medium px-2 py-1 rounded transition-colors duration-200 uppercase tracking-wider
-                \${copied ? 'text-green-400 bg-green-400/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}
-            `}
+            // BUG FIX 1: Was `\${copied ? ...}` (broken escape), now proper template literal
+            className={`text-[10px] font-medium px-2 py-1 rounded transition-colors duration-200 uppercase tracking-wider ${copied ? 'text-green-400 bg-green-400/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
         >
             {copied ? 'Copied!' : 'Copy'}
         </button>
@@ -140,7 +138,6 @@ const ExplainEngine = () => {
     };
 
     const levels = [
-        // ... levels array (no change)
         {
             value: 0,
             label: "Child",
@@ -173,7 +170,8 @@ const ExplainEngine = () => {
         }
     ];
 
-    const handleExplain = async () => {
+    // BUG FIX 2: Wrapped in useCallback so it's stable and can be safely used in useEffect deps
+    const handleExplain = useCallback(async () => {
         const textToExplain = textareaRef.current?.value.trim();
         if (!textToExplain) {
             setError('Please enter some text to explain.');
@@ -184,7 +182,6 @@ const ExplainEngine = () => {
         setError('');
         setFollowUpQuestions([]);
         setFlashcards([]);
-        // We do NOT clear the learning path, so they can keep following the roadmap
 
         const systemPrompt = `You are a helpful AI assistant that explains complex topics in simple terms. ${levels[level].prompt} 
                             
@@ -217,7 +214,6 @@ const ExplainEngine = () => {
                     .map(q => q.replace(/^\d+\.\s*\[?|\]?$/g, '').trim())
                     .filter(q => q.length > 10);
                 setFollowUpQuestions(questions.slice(0, 3));
-                // Remove the follow-up section from main output
                 setOutput(explanation.replace(/---\s*\n\*\*Want to learn more\?\*\*[\s\S]*$/i, '').trim());
             } else {
                 setOutput(explanation);
@@ -234,7 +230,7 @@ const ExplainEngine = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [level]); // level is the only external dependency
 
     // Handle follow-up question click
     const handleFollowUp = (question) => {
@@ -244,7 +240,7 @@ const ExplainEngine = () => {
         handleExplain();
     };
 
-    const handleClear = () => {
+    const handleClear = useCallback(() => {
         if (textareaRef.current) {
             textareaRef.current.value = '';
         }
@@ -253,7 +249,17 @@ const ExplainEngine = () => {
         setFollowUpQuestions([]);
         setFlashcards([]);
         setLearningPath([]);
-    };
+    }, []);
+
+    const handleCopyAll = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(output);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    }, [output]);
 
     const handleGenerateFlashcards = async () => {
         if (!output) return;
@@ -322,31 +328,17 @@ const ExplainEngine = () => {
         }
     };
 
-    // One-Click Copy entire explanation
-    const handleCopyAll = async () => {
-        try {
-            await navigator.clipboard.writeText(output);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
-
-    // Keyboard shortcuts
+    // BUG FIX 3: Added handleExplain, handleCopyAll, handleClear to deps so shortcuts use fresh versions
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Ctrl/Cmd + Enter = Explain
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 handleExplain();
             }
-            // Ctrl/Cmd + Shift + C = Copy All
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
                 e.preventDefault();
                 if (output) handleCopyAll();
             }
-            // Escape = Clear
             if (e.key === 'Escape') {
                 handleClear();
             }
@@ -354,14 +346,13 @@ const ExplainEngine = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [output]);
+    }, [output, handleExplain, handleCopyAll, handleClear]);
 
     const handleSelectPathStep = (stepTitle) => {
         if (textareaRef.current) {
             textareaRef.current.value = stepTitle;
         }
         handleExplain();
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -626,7 +617,6 @@ const ExplainEngine = () => {
                             </div>
                         </div>
 
-                        {/* Output Container with Border and Overflow Handling */}
                         {isLoading ? (
                             <SkeletonLoader />
                         ) : (
@@ -645,7 +635,6 @@ const ExplainEngine = () => {
                                             const isShort = content.length < 60 && !content.includes('\n')
                                             const language = match ? match[1] : 'text'
 
-                                            // Inline or short content
                                             if (inline || isShort) {
                                                 return (
                                                     <code className="bg-zinc-800/50 rounded px-1.5 py-0.5 text-sm font-mono text-zinc-300 break-words font-bold" {...props}>
@@ -654,7 +643,6 @@ const ExplainEngine = () => {
                                                 )
                                             }
 
-                                            // Block content with syntax highlighting and copy button
                                             return (
                                                 <div className="relative group my-6 border border-zinc-800 rounded-lg overflow-hidden">
                                                     <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-zinc-800">
@@ -694,7 +682,6 @@ const ExplainEngine = () => {
                             </div>
                         )}
 
-                        {/* Interactive Tools */}
                         {!isLoading && output && (
                             <div className="mt-6 flex flex-wrap gap-3">
                                 <button
@@ -707,7 +694,6 @@ const ExplainEngine = () => {
                             </div>
                         )}
 
-                        {/* Follow-up Questions */}
                         {followUpQuestions.length > 0 && !isLoading && (
                             <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
                                 <h4 className="text-sm font-medium text-zinc-400 mb-3">🧩 Want to learn more?</h4>
@@ -725,7 +711,6 @@ const ExplainEngine = () => {
                             </div>
                         )}
 
-                        {/* Learning Path Output */}
                         {learningPath.length > 0 && !isLoading && (
                             <LearningPathViewer
                                 path={learningPath}
