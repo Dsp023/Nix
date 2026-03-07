@@ -9,7 +9,7 @@ const STORAGE_KEYS = {
 };
 
 // Built-in default API key (from .env for local dev, works on deployed version)
-const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || 'gsk_YOUR_GROQ_API_KEY_HERE';
+const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
 // Provider configurations
 const PROVIDERS = {
@@ -57,6 +57,9 @@ export const setProvider = (provider) => {
     localStorage.setItem(STORAGE_KEYS.PROVIDER, provider);
 };
 
+// BUG FIX 4: Old code fell back to the placeholder string 'gsk_YOUR_GROQ_API_KEY_HERE'
+// which is truthy, so hasApiKey() always returned true even with no real key set.
+// Now DEFAULT_GROQ_KEY falls back to '' (empty string), so the check is accurate.
 export const hasApiKey = () => {
     return !!getUserApiKey() || !!DEFAULT_GROQ_KEY;
 };
