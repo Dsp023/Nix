@@ -12,6 +12,7 @@ import { callAI, hasApiKey, isUsingDefaultKey } from '../utils/apiService';
 import FlashcardViewer from './FlashcardViewer';
 import LearningPathViewer from './LearningPathViewer';
 import CommandPalette from './CommandPalette';
+import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 
 const levelThemes = {
     0: { gradient: 'from-pink-500/20 via-rose-500/10 to-orange-500/20', border: 'border-pink-500/30', glow: 'shadow-pink-500/20', text: 'text-pink-400' },
@@ -83,6 +84,7 @@ const ExplainEngine = () => {
     // UI States
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+    const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
     const textareaRef = useRef(null);
     const outputRef = useRef(null);
@@ -103,9 +105,14 @@ const ExplainEngine = () => {
     // Command Palette Keyboard Shortcut
     useEffect(() => {
         const handleKeyDown = (e) => {
+            const tag = document.activeElement?.tagName?.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 setIsCommandPaletteOpen(true);
+            }
+            if (e.key === '?' && tag !== 'input' && tag !== 'textarea') {
+                e.preventDefault();
+                setIsShortcutsOpen(prev => !prev);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -386,6 +393,10 @@ const ExplainEngine = () => {
                 onClose={() => setIsCommandPaletteOpen(false)}
                 commands={commandPaletteCommands}
             />
+            <KeyboardShortcutsModal
+                isOpen={isShortcutsOpen}
+                onClose={() => setIsShortcutsOpen(false)}
+            />
             {flashcards.length > 0 && (
                 <FlashcardViewer
                     cards={flashcards}
@@ -402,6 +413,20 @@ const ExplainEngine = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 3v5h5" />
                     <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+                </svg>
+            </button>
+
+            {/* Keyboard Shortcuts Button */}
+            <button
+                onClick={() => setIsShortcutsOpen(true)}
+                className="fixed right-14 top-4 z-50 p-2 text-zinc-400 hover:text-white transition-colors bg-black/50 backdrop-blur-sm rounded-lg border border-zinc-800"
+                title="Keyboard Shortcuts (?)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="M6 8h.001" /><path d="M10 8h.001" /><path d="M14 8h.001" /><path d="M18 8h.001" />
+                    <path d="M8 12h.001" /><path d="M12 12h.001" /><path d="M16 12h.001" />
+                    <path d="M7 16h10" />
                 </svg>
             </button>
 
