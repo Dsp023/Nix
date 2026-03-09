@@ -237,7 +237,7 @@ const ExplainEngine = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [level]); // level is the only external dependency
+    }, [level, levels]); // level is the only external dependency
 
     // Handle follow-up question click
     const handleFollowUp = (question) => {
@@ -654,7 +654,7 @@ const ExplainEngine = () => {
                                     remarkPlugins={[remarkGfm, remarkMath]}
                                     rehypePlugins={[rehypeKatex, rehypeRaw]}
                                     components={{
-                                        code({ node, inline, className, children, ...props }) {
+                                        code({ inline, className, children, ...props }) {
                                             const match = /language-(\w+)/.exec(className || '')
                                             const content = String(children).replace(/\n$/, '')
                                             const isShort = content.length < 60 && !content.includes('\n')
@@ -688,7 +688,7 @@ const ExplainEngine = () => {
                                                 </div>
                                             )
                                         },
-                                        table({ node, ...props }) {
+                                        table({ ...props }) {
                                             return (
                                                 <div className="overflow-x-auto my-6 border border-zinc-800 rounded-lg">
                                                     <table className="w-full text-sm text-left border-collapse" {...props} />
