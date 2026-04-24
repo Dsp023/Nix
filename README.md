@@ -3,6 +3,10 @@
 An adaptive AI explanation engine. Pick a complexity level, type a concept, get an explanation that actually matches where you are.
 
 Live: [nix42.netlify.app](https://nix42.netlify.app)
+<img width="1919" height="962" alt="image" src="https://github.com/user-attachments/assets/ef693c82-a837-4c72-b1d3-b56a6f09f36a" />
+<img width="1919" height="965" alt="image" src="https://github.com/user-attachments/assets/6639e8f5-9067-47ca-b234-5c0d58495707" />
+<img width="1919" height="968" alt="image" src="https://github.com/user-attachments/assets/50cfcd35-2515-4183-a735-4216ea50f465" />
+<img width="1919" height="960" alt="image" src="https://github.com/user-attachments/assets/168b3bcd-c354-408f-8d0b-c8bc7c4be38a" />
 
 ---
 
