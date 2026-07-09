@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ApiKeySettings from './ApiKeySettings';
-import { callAI, hasApiKey, isUsingDefaultKey } from '../utils/apiService';
+import { callAI, callAIStream, hasApiKey, isUsingDefaultKey } from '../utils/apiService';
 import FlashcardViewer from './FlashcardViewer';
 import LearningPathViewer from './LearningPathViewer';
 import CommandPalette from './CommandPalette';
@@ -146,6 +146,7 @@ const ExplainEngine = () => {
         setError('');
         setFollowUpQuestions([]);
         setFlashcards([]);
+        setOutput(''); // Clear previous output for fresh streaming feel
 
         const systemPrompt = `You are a helpful AI assistant that explains complex topics in simple terms. ${levels[level].prompt} 
                             
@@ -163,14 +164,31 @@ const ExplainEngine = () => {
             2. [Second follow-up question]
             3. [Third follow-up question]`;
 
+        let accumulatedExplanation = '';
         try {
-            const explanation = await callAI(
+            await callAIStream(
                 [{ role: 'user', content: textToExplain }],
-                systemPrompt
+                systemPrompt,
+                (chunk) => {
+                    accumulatedExplanation += chunk;
+                    
+                    // Real-time parsing of follow-up questions to hide them from display
+                    const questionSeparatorIndex = accumulatedExplanation.search(/---\s*\n\*\*Want to learn more\?\*\*/i);
+                    if (questionSeparatorIndex !== -1) {
+                        setOutput(accumulatedExplanation.substring(0, questionSeparatorIndex).trim());
+                    } else {
+                        const questionDirectIndex = accumulatedExplanation.search(/\*\*Want to learn more\?\*\*/i);
+                        if (questionDirectIndex !== -1) {
+                            setOutput(accumulatedExplanation.substring(0, questionDirectIndex).trim());
+                        } else {
+                            setOutput(accumulatedExplanation);
+                        }
+                    }
+                }
             );
 
-            // Parse follow-up questions from response
-            const questionMatch = explanation.match(/\*\*Want to learn more\?\*\*([\s\S]*?)$/i);
+            // Parse follow-up questions from completed response
+            const questionMatch = accumulatedExplanation.match(/\*\*Want to learn more\?\*\*([\s\S]*?)$/i);
             if (questionMatch) {
                 const questionsText = questionMatch[1];
                 const questions = questionsText
@@ -178,12 +196,12 @@ const ExplainEngine = () => {
                     .map(q => q.replace(/^\d+\.\s*\[?|\]?$/g, '').trim())
                     .filter(q => q.length > 10);
                 setFollowUpQuestions(questions.slice(0, 3));
-                setOutput(explanation.replace(/---\s*\n\*\*Want to learn more\?\*\*[\s\S]*$/i, '').trim());
+                setOutput(accumulatedExplanation.replace(/---\s*\n\*\*Want to learn more\?\*\*[\s\S]*$/i, '').trim());
             } else {
-                setOutput(explanation);
+                setOutput(accumulatedExplanation);
             }
 
-            addToHistory(textToExplain, explanation, level);
+            addToHistory(textToExplain, accumulatedExplanation, level);
         } catch (err) {
             console.error('Error:', err);
             if (err.message === 'NO_API_KEY') {
