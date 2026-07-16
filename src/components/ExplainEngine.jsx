@@ -5,6 +5,7 @@ import FlashcardViewer from './FlashcardViewer';
 import LearningPathViewer from './LearningPathViewer';
 import CommandPalette from './CommandPalette';
 import KeyboardShortcutsModal from './Keyboardshortcutsmodal';
+import { supabase } from '../utils/supabaseClient';
 
 // Subcomponents
 import Header from './Header';
@@ -55,7 +56,7 @@ const levels = [
     }
 ];
 
-const ExplainEngine = () => {
+const ExplainEngine = ({ session }) => {
     const [level, setLevel] = useState(2); // Default to "Detailed"
     const [isLoading, setIsLoading] = useState(false);
     const [output, setOutput] = useState('');
@@ -80,18 +81,43 @@ const ExplainEngine = () => {
     const textareaRef = useRef(null);
     const outputRef = useRef(null);
 
-    // Load history from local storage on mount
+    // Load history on mount or session change
     useEffect(() => {
-        const savedHistory = localStorage.getItem('nix_history');
-        if (savedHistory) {
-            setHistory(JSON.parse(savedHistory));
-        }
-    }, []);
+        const loadHistory = async () => {
+            if (session?.user) {
+                try {
+                    const { data, error } = await supabase
+                        .from('nix_history')
+                        .select('*')
+                        .eq('user_id', session.user.id)
+                        .order('timestamp', { ascending: false })
+                        .limit(10);
+                    
+                    if (error) throw error;
+                    if (data) {
+                        setHistory(data.map(item => ({
+                            id: item.id,
+                            query: item.query,
+                            response: item.response,
+                            level: item.level,
+                            timestamp: item.timestamp
+                        })));
+                        return; // Loaded successfully from database
+                    }
+                } catch (dbError) {
+                    console.error('Failed to load history from Supabase:', dbError);
+                }
+            }
 
-    // Save history to local storage whenever it changes
-    useEffect(() => {
-        localStorage.setItem('nix_history', JSON.stringify(history));
-    }, [history]);
+            // Fallback to localStorage if guest or database fetch failed
+            const savedHistory = localStorage.getItem('nix_history');
+            if (savedHistory) {
+                setHistory(JSON.parse(savedHistory));
+            }
+        };
+
+        loadHistory();
+    }, [session]);
 
     // Command Palette Keyboard Shortcut
     useEffect(() => {
@@ -110,15 +136,46 @@ const ExplainEngine = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const addToHistory = (query, response, lvl) => {
+    const addToHistory = async (query, response, lvl) => {
         const newEntry = {
-            id: Date.now(),
             query,
             response,
             level: lvl,
             timestamp: new Date().toISOString()
         };
-        setHistory(prev => [newEntry, ...prev].slice(0, 10)); // Keep last 10 items
+
+        if (session?.user) {
+            try {
+                const { data, error } = await supabase
+                    .from('nix_history')
+                    .insert([{
+                        user_id: session.user.id,
+                        query,
+                        response,
+                        level: lvl
+                    }])
+                    .select();
+
+                if (error) throw error;
+                if (data && data[0]) {
+                    setHistory(prev => [data[0], ...prev].slice(0, 10));
+                    return;
+                }
+            } catch (dbError) {
+                console.error('Failed to save history to Supabase:', dbError);
+            }
+        }
+
+        // Fallback to localStorage
+        const localEntry = {
+            id: Date.now(),
+            ...newEntry
+        };
+        setHistory(prev => {
+            const updated = [localEntry, ...prev].slice(0, 10);
+            localStorage.setItem('nix_history', JSON.stringify(updated));
+            return updated;
+        });
     };
 
     const loadHistoryItem = (item) => {
@@ -130,9 +187,28 @@ const ExplainEngine = () => {
         setShowHistory(false);
     };
 
-    const deleteHistoryItem = (e, id) => {
+    const deleteHistoryItem = async (e, id) => {
         e.stopPropagation();
-        setHistory(prev => prev.filter(item => item.id !== id));
+
+        if (session?.user) {
+            try {
+                const { error } = await supabase
+                    .from('nix_history')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', session.user.id);
+
+                if (error) throw error;
+            } catch (dbError) {
+                console.error('Failed to delete history from Supabase:', dbError);
+            }
+        }
+
+        setHistory(prev => {
+            const updated = prev.filter(item => item.id !== id);
+            localStorage.setItem('nix_history', JSON.stringify(updated));
+            return updated;
+        });
     };
 
     const handleExplain = useCallback(async () => {
@@ -386,6 +462,19 @@ const ExplainEngine = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 3v5h5" />
                     <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+                </svg>
+            </button>
+
+            {/* Sign Out Button */}
+            <button
+                onClick={() => supabase.auth.signOut()}
+                className="fixed right-24 top-4 z-50 p-2 text-zinc-400 hover:text-rose-400 transition-colors bg-black/50 backdrop-blur-sm rounded-lg border border-zinc-800"
+                title="Sign Out"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
             </button>
 
