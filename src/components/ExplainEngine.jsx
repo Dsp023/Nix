@@ -500,6 +500,7 @@ const ExplainEngine = () => {
                     copied={copied}
                     onClear={handleClear}
                     outputRef={outputRef}
+                    topic={textareaRef.current?.value || 'Explanation'}
                 />
 
                 {!isLoading && output && (

@@ -7,6 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import 'katex/dist/katex.min.css';
+import { exportExplanationToPDF } from '../utils/pdfGenerator';
 
 const SkeletonLoader = () => (
     <div className="space-y-6 animate-pulse p-6 bg-zinc-950/40 border border-zinc-800/80 rounded-2xl">
@@ -58,12 +59,27 @@ const ExplanationView = ({
     onCopyAll,
     copied,
     onClear,
-    outputRef
+    outputRef,
+    topic
 }) => {
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
+
     if (!output && !isLoading) return null;
 
     const wordCount = output ? output.trim().split(/\s+/).filter(Boolean).length : 0;
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    const handleExportPDF = async () => {
+        if (!outputRef.current || isExportingPDF) return;
+        setIsExportingPDF(true);
+        try {
+            await exportExplanationToPDF(outputRef.current, topic || 'Explanation');
+        } catch (err) {
+            console.error('Failed to export PDF:', err);
+        } finally {
+            setIsExportingPDF(false);
+        }
+    };
 
     return (
         <div className="mt-8 pt-2 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -93,6 +109,14 @@ const ExplanationView = ({
                         ) : (
                             <><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3m13 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-8v3a2 2 0 0 1-2 2h-3" /></svg> Focus</>
                         )}
+                    </button>
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isLoading || !output || isExportingPDF}
+                        className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                        title="Export explanation as styled PDF"
+                    >
+                        <span>{isExportingPDF ? 'Exporting...' : '📄 PDF'}</span>
                     </button>
                     <button
                         onClick={onCopyAll}
