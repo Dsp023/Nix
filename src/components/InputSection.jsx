@@ -1,5 +1,13 @@
 import React from 'react';
 
+const SUGGESTED_TOPICS = [
+    { label: "Quantum Entanglement", level: 3 },
+    { label: "Transformer Neural Networks", level: 2 },
+    { label: "Black Holes & Event Horizons", level: 1 },
+    { label: "How Compilers Work", level: 2 },
+    { label: "Photosynthesis", level: 0 },
+];
+
 const InputSection = ({ 
     textareaRef, 
     level, 
@@ -17,7 +25,7 @@ const InputSection = ({
 
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 delay-150 fill-mode-both">
-            <div className="space-y-4">
+            <div className="space-y-3">
                 <textarea
                     ref={textareaRef}
                     id="text-input"
@@ -25,6 +33,28 @@ const InputSection = ({
                     placeholder="What do you want to learn today?"
                     disabled={isLoading}
                 ></textarea>
+                <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs text-zinc-500">
+                    <span className="text-[11px] text-zinc-500">Try:</span>
+                    {SUGGESTED_TOPICS.map((item) => (
+                        <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                                if (textareaRef.current) {
+                                    textareaRef.current.value = item.label;
+                                    textareaRef.current.focus();
+                                }
+                                if (setLevel) {
+                                    setLevel(item.level);
+                                }
+                            }}
+                            disabled={isLoading}
+                            className="px-2.5 py-1 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 transition-all text-[11px] active:scale-95"
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="space-y-3 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80 backdrop-blur-md">
