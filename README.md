@@ -34,7 +34,7 @@ Other things it does:
 - **Real-time token streaming**: Watch explanations render chunk-by-chunk without delay
 - **Dynamic Learning Paths**: Generates a 5-step learning roadmap for any topic
 - **3D Study Flashcards**: Creates 3D flippable flashcards from key terms
-- **Multi-Provider AI**: Supports Groq (Llama 3.3), Google Gemini (2.0 Flash), and OpenAI (GPT-4o mini)
+- **Multi-Provider AI**: Supports Groq (openai/gpt-oss-120b), Google Gemini (2.0 Flash), and OpenAI (GPT-4o mini)
 - **Math & Syntax Rendering**: Full KaTeX LaTeX math support alongside syntax-highlighted code blocks
 - **PDF Export**: Exports your notes as a PDF with math formatting preserved
 - **Command Palette & Cheatsheet**: Quick keyboard navigation (`Ctrl+K` / `⌘K` and `?`)

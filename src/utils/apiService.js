@@ -16,7 +16,7 @@ const PROVIDERS = {
     groq: {
         name: 'Groq',
         endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-        defaultModel: 'llama-3.3-70b-versatile',
+        defaultModel: 'openai/gpt-oss-120b',
         keyPrefix: 'gsk_',
         getKeyUrl: 'https://console.groq.com/keys'
     },
