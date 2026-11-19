@@ -212,7 +212,9 @@ const callOpenAICompatibleStream = async (endpoint, apiKey, model, messages, sys
                     if (content) {
                         onChunk(content);
                     }
-                } catch (e) {}
+                } catch {
+                    // Ignore parse errors for incomplete streaming chunks
+                }
             }
         }
     } finally {
@@ -324,7 +326,9 @@ const callGeminiStream = async (apiKey, messages, systemPrompt, onChunk) => {
                     if (content) {
                         onChunk(content);
                     }
-                } catch (e) {}
+                } catch {
+                    // Ignore parse errors for incomplete streaming chunks
+                }
             }
         }
     } finally {
