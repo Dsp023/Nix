@@ -250,7 +250,7 @@ const ExplainEngine = () => {
         }
     }, [output]);
 
-    const handleGenerateFlashcards = async () => {
+    const handleGenerateFlashcards = useCallback(async () => {
         if (!output) return;
         setIsGeneratingFlashcards(true);
         setError('');
@@ -278,7 +278,7 @@ const ExplainEngine = () => {
         } finally {
             setIsGeneratingFlashcards(false);
         }
-    };
+    }, [output]);
 
     const handleGenerateLearningPath = async () => {
         const textToExplain = textareaRef.current?.value.trim() || output;
@@ -327,6 +327,10 @@ const ExplainEngine = () => {
                 e.preventDefault();
                 if (output) handleCopyAll();
             }
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+                e.preventDefault();
+                if (output && !isGeneratingFlashcards) handleGenerateFlashcards();
+            }
             if (e.key === 'Escape') {
                 handleClear();
             }
@@ -334,7 +338,7 @@ const ExplainEngine = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [output, handleExplain, handleCopyAll, handleClear]);
+    }, [output, handleExplain, handleCopyAll, handleClear, isGeneratingFlashcards, handleGenerateFlashcards]);
 
     const handleSelectPathStep = (stepTitle) => {
         if (textareaRef.current) {
@@ -504,13 +508,16 @@ const ExplainEngine = () => {
                 />
 
                 {!isLoading && output && (
-                    <div className="mt-6 flex flex-wrap gap-3">
+                    <div className="mt-6 flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <button
                             onClick={handleGenerateFlashcards}
                             disabled={isGeneratingFlashcards}
-                            className="px-4 py-2 text-sm font-semibold text-emerald-400 bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-900/50 rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/60 rounded-xl shadow-lg transition-all duration-200 flex items-center gap-2 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
-                            {isGeneratingFlashcards ? '⏳ Generating cards...' : '🧠 Make Flashcards'}
+                            <span>{isGeneratingFlashcards ? '⏳ Generating cards...' : '🎴 Generate 3D Flashcards'}</span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-300 font-normal hidden sm:inline">
+                                Ctrl+Shift+F
+                            </span>
                         </button>
                     </div>
                 )}

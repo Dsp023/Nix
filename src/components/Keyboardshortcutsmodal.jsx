@@ -6,6 +6,7 @@ const shortcuts = [
         items: [
             { keys: ['Ctrl', 'Enter'], label: 'Explain topic' },
             { keys: ['Ctrl', 'Shift', 'C'], label: 'Copy explanation' },
+            { keys: ['Ctrl', 'Shift', 'F'], label: 'Generate 3D flashcards' },
             { keys: ['Escape'], label: 'Clear everything' },
         ]
     },
@@ -21,6 +22,7 @@ const shortcuts = [
         items: [
             { keys: ['⌘', 'Enter'], label: 'Explain topic' },
             { keys: ['⌘', 'Shift', 'C'], label: 'Copy explanation' },
+            { keys: ['⌘', 'Shift', 'F'], label: 'Generate 3D flashcards' },
             { keys: ['⌘', 'K'], label: 'Open command palette' },
         ]
     }

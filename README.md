@@ -111,6 +111,7 @@ Opens at `http://localhost:5173`
 |----------|--------|
 | `Ctrl` / `⌘` + `Enter` | Explain topic |
 | `Ctrl` / `⌘` + `Shift` + `C` | Copy explanation |
+| `Ctrl` / `⌘` + `Shift` + `F` | Generate 3D study flashcards |
 | `Ctrl` / `⌘` + `K` | Open command palette |
 | `?` | Open keyboard shortcuts cheatsheet |
 | `Esc` | Clear output / Close modals |
