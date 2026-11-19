@@ -14,37 +14,43 @@ Live: [nix42.netlify.app](https://nix42.netlify.app)
 
 I kept Googling things and getting explanations that were either too dumbed down or assumed I already knew everything. Couldn't find a middle ground. So I built Nix to let you pick your own level before asking.
 
-Took about 3 weeks. Most of that time was fighting react-markdown and getting KaTeX to render properly inside dynamically generated content.
+Most of the early development was fighting react-markdown and getting KaTeX to render properly inside dynamically generated streaming content.
 
 ---
 
 ## What it does
 
-Type any concept. Pick one of 5 levels. Get an explanation written specifically for that level.
+Type any concept (or pick from starter suggestions). Pick one of 5 levels. Get an explanation written specifically for that level streamed in real-time.
 
 | Level | What it sounds like |
 |-------|-------------------|
 | Child | Simple words, analogies, no jargon |
 | Simple | Everyday examples, general audience |
 | Detailed | Structured breakdown — what, why, how |
-| Academic | Undergraduate level, proper definitions |
+| Academic | Undergraduate level, proper definitions, LaTeX equations |
 | Expert | Edge cases, advanced theory, LaTeX derivations |
 
 Other things it does:
-- Generates a 5-step learning roadmap for any topic
-- Creates 3D flippable flashcards from key concepts
-- Exports your notes as a PDF with math formatting preserved
-- Saves session history locally so you can come back to it
+- **Real-time token streaming**: Watch explanations render chunk-by-chunk without delay
+- **Dynamic Learning Paths**: Generates a 5-step learning roadmap for any topic
+- **3D Study Flashcards**: Creates 3D flippable flashcards from key terms
+- **Multi-Provider AI**: Supports Groq (Llama 3.3), Google Gemini (2.0 Flash), and OpenAI (GPT-4o mini)
+- **Math & Syntax Rendering**: Full KaTeX LaTeX math support alongside syntax-highlighted code blocks
+- **PDF Export**: Exports your notes as a PDF with math formatting preserved
+- **Command Palette & Cheatsheet**: Quick keyboard navigation (`Ctrl+K` / `⌘K` and `?`)
+- **Focus Mode**: Distraction-free reading view
+- **Local History**: Saves session history locally so you can revisit past explanations
 
 ---
 
 ## Tech stack
 
-- React + Vite
-- Tailwind CSS
-- Groq SDK — Llama 3 for inference
-- react-markdown + remark-math + rehype-katex for rendering
-- jspdf + html2canvas for PDF export
+- **Frontend**: React 19 + Vite
+- **Styling**: Tailwind CSS
+- **AI Inference**: Multi-provider streaming client supporting Groq, Google Gemini, and OpenAI
+- **Markdown & Math**: `react-markdown` + `remark-math` + `rehype-katex` + `rehype-raw`
+- **Code Highlighting**: `react-syntax-highlighter` (Prism atomDark)
+- **Exporting**: `jspdf` + `html2canvas`
 
 ---
 
@@ -53,11 +59,23 @@ Other things it does:
 ```
 src/
 ├── components/
-│   └── ExplainEngine.jsx  # main component — handles UI, API calls, state
+│   ├── ExplainEngine.jsx           # Main orchestrator component
+│   ├── Header.jsx                  # Header with active API status
+│   ├── InputSection.jsx            # Text prompt, complexity levels & quick topic chips
+│   ├── ExplanationView.jsx         # Streaming Markdown + LaTeX rendering & focus mode
+│   ├── FollowUpSection.jsx         # Contextual follow-up question chips
+│   ├── HistorySidebar.jsx          # Local session history drawer
+│   ├── FlashcardViewer.jsx         # 3D flippable study flashcards
+│   ├── LearningPathViewer.jsx      # 5-step structured concept roadmaps
+│   ├── CommandPalette.jsx          # Ctrl+K command menu
+│   ├── ApiKeySettings.jsx          # Multi-provider BYOK configuration modal
+│   ├── Keyboardshortcutsmodal.jsx  # Keyboard cheatsheet modal
+│   └── Footer.jsx                  # Minimal footer
 ├── utils/
-│   └── pdfGenerator.js    # PDF export logic
-├── index.css
+│   ├── apiService.js               # Multi-provider streaming AI client (Groq, Gemini, OpenAI)
+│   └── pdfGenerator.js             # Math-preserved PDF export logic
 ├── App.jsx
+├── index.css
 └── main.jsx
 ```
 
@@ -71,9 +89,9 @@ cd Nix
 npm install
 ```
 
-Create a `.env` file:
+Create a `.env` file (optional, Nix also supports in-app API key configuration):
 
-```
+```bash
 VITE_GROQ_API_KEY=your_groq_key_here
 ```
 
@@ -87,28 +105,22 @@ Opens at `http://localhost:5173`
 
 ---
 
-## Known limitations
+## Keyboard shortcuts
 
-- API key is on the client side via Vite env — fine for personal use, not for production
-- Everything lives in `ExplainEngine.jsx` — needs to be broken into smaller components
-- No backend — history is localStorage only, clears if you switch browsers
-- PDF export can be slow on pages with heavy LaTeX content
-- No streaming — waits for full response before rendering
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl` / `⌘` + `Enter` | Explain topic |
+| `Ctrl` / `⌘` + `Shift` + `C` | Copy explanation |
+| `Ctrl` / `⌘` + `K` | Open command palette |
+| `?` | Open keyboard shortcuts cheatsheet |
+| `Esc` | Clear output / Close modals |
 
 ---
 
 ## Hardest part
 
-Getting the KaTeX math rendering to work inside react-markdown without breaking the syntax highlighter. The `node` prop in the code renderer was causing conflicts with the math blocks. Took a while to figure out that removing `node` from the destructured props fixed it. Committed that fix on March 9th around 2AM.
+Getting the KaTeX math rendering to work inside react-markdown without breaking the syntax highlighter. The `node` prop in the code renderer was causing conflicts with the math blocks. Removing `node` from the destructured props fixed it.
 
 ---
 
-## What I'd do differently
-
-- Split ExplainEngine.jsx into smaller components from the start
-- Add a proper backend so history persists across devices
-- Use TypeScript — started in JS, by the time I wanted to migrate it was too deep in
-
----
-
-Built by [Nakka Devi Sri Prasad](https://github.com/Dsp023)
+Built with care by [Nakka Devi Sri Prasad](https://github.com/Dsp023)
