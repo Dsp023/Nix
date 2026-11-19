@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -63,11 +63,59 @@ const ExplanationView = ({
     topic
 }) => {
     const [isExportingPDF, setIsExportingPDF] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
+    useEffect(() => {
+        return () => {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, [output]);
 
     if (!output && !isLoading) return null;
 
     const wordCount = output ? output.trim().split(/\s+/).filter(Boolean).length : 0;
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    const cleanMarkdownForSpeech = (text) => {
+        if (!text) return '';
+        return text
+            .replace(/```[\s\S]*?```/g, 'Code block omitted.')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/[*_#~>]/g, '')
+            .replace(/\$+[^$]+\$+/g, 'Mathematical equation.')
+            .replace(/\n+/g, ' ')
+            .trim();
+    };
+
+    const handleToggleSpeak = () => {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+            alert('Speech synthesis is not supported in this browser.');
+            return;
+        }
+
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const spokenText = cleanMarkdownForSpeech(output);
+        if (!spokenText) return;
+
+        const utterance = new SpeechSynthesisUtterance(spokenText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+    };
 
     const handleExportPDF = async () => {
         if (!outputRef.current || isExportingPDF) return;
@@ -108,6 +156,25 @@ const ExplanationView = ({
                             <><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg> Exit Focus</>
                         ) : (
                             <><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3m13 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-8v3a2 2 0 0 1-2 2h-3" /></svg> Focus</>
+                        )}
+                    </button>
+                    <button
+                        onClick={handleToggleSpeak}
+                        disabled={isLoading || !output}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 ${
+                            isSpeaking
+                                ? 'text-indigo-300 bg-indigo-950/60 border border-indigo-700/60 shadow-sm'
+                                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                        }`}
+                        title={isSpeaking ? 'Stop audio narration' : 'Listen to explanation'}
+                    >
+                        {isSpeaking ? (
+                            <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                                <span>Stop</span>
+                            </>
+                        ) : (
+                            <span>🔊 Listen</span>
                         )}
                     </button>
                     <button
