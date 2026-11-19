@@ -138,6 +138,11 @@ const ExplainEngine = () => {
         });
     };
 
+    const clearAllHistory = () => {
+        setHistory([]);
+        localStorage.removeItem('nix_history');
+    };
+
     const handleExplain = useCallback(async () => {
         const textToExplain = textareaRef.current?.value.trim();
         if (!textToExplain) {
@@ -380,43 +385,49 @@ const ExplainEngine = () => {
                 />
             )}
 
-            {/* History Sidebar Toggle */}
+            {/* Top Navigation: History on Left, Shortcuts & Settings on Right */}
             <button
                 onClick={() => setShowHistory(!showHistory)}
-                className="fixed left-4 top-4 z-50 p-2 text-zinc-400 hover:text-white transition-colors bg-black/50 backdrop-blur-sm rounded-lg border border-zinc-800"
+                className="fixed left-4 sm:left-6 top-4 sm:top-6 z-40 px-3.5 py-2 text-xs font-medium text-zinc-400 hover:text-white transition-all bg-zinc-900/80 hover:bg-zinc-800/90 backdrop-blur-md rounded-xl border border-zinc-800/80 shadow-lg flex items-center gap-2 active:scale-95 group cursor-pointer"
                 title="History"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500 group-hover:text-zinc-200 transition-colors">
                     <path d="M3 3v5h5" />
                     <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
                 </svg>
+                <span className="hidden sm:inline">History</span>
+                {history.length > 0 && (
+                    <span className="px-1.5 py-0.2 bg-zinc-800 text-zinc-300 text-[10px] font-semibold rounded-full border border-zinc-700">
+                        {history.length}
+                    </span>
+                )}
             </button>
 
-            {/* Keyboard Shortcuts Button */}
-            <button
-                onClick={() => setIsShortcutsOpen(true)}
-                className="fixed right-14 top-4 z-50 p-2 text-zinc-400 hover:text-white transition-colors bg-black/50 backdrop-blur-sm rounded-lg border border-zinc-800"
-                title="Keyboard Shortcuts (?)"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                    <path d="M6 8h.001" /><path d="M10 8h.001" /><path d="M14 8h.001" /><path d="M18 8h.001" />
-                    <path d="M8 12h.001" /><path d="M12 12h.001" /><path d="M16 12h.001" />
-                    <path d="M7 16h10" />
-                </svg>
-            </button>
+            <div className="fixed right-4 sm:right-6 top-4 sm:top-6 z-40 flex items-center gap-1 p-1 bg-zinc-900/80 backdrop-blur-md rounded-xl border border-zinc-800/80 shadow-lg">
+                <button
+                    onClick={() => setIsShortcutsOpen(true)}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-lg transition-all active:scale-95 cursor-pointer"
+                    title="Keyboard Shortcuts (?)"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="M6 8h.001" /><path d="M10 8h.001" /><path d="M14 8h.001" /><path d="M18 8h.001" />
+                        <path d="M8 12h.001" /><path d="M12 12h.001" /><path d="M16 12h.001" />
+                        <path d="M7 16h10" />
+                    </svg>
+                </button>
 
-            {/* Settings Button */}
-            <button
-                onClick={() => setShowSettings(true)}
-                className="fixed right-4 top-4 z-50 p-2 text-zinc-400 hover:text-white transition-colors bg-black/50 backdrop-blur-sm rounded-lg border border-zinc-800"
-                title="API Settings"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                    <circle cx="12" cy="12" r="3" />
-                </svg>
-            </button>
+                <button
+                    onClick={() => setShowSettings(true)}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-lg transition-all active:scale-95 cursor-pointer"
+                    title="API & Model Settings"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+            </div>
 
             {/* API Settings Modal */}
             <ApiKeySettings isOpen={showSettings} onClose={() => setShowSettings(false)} />
@@ -428,10 +439,11 @@ const ExplainEngine = () => {
                 history={history}
                 onLoadItem={loadHistoryItem}
                 onDeleteItem={deleteHistoryItem}
+                onClearAll={clearAllHistory}
                 levels={levels}
             />
 
-            <Header isFocusMode={isFocusMode} />
+            <Header isFocusMode={isFocusMode} onOpenSettings={() => setShowSettings(true)} />
 
             <main className={`space-y-8 transition-all duration-500 ${isFocusMode ? 'pt-12' : ''}`}>
                 {/* API Key Required Prompt */}
